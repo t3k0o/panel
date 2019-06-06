@@ -15,6 +15,7 @@ Route::post('send-message', function (\Illuminate\Http\Request $request){
     event(new \App\Events\BroadcastMessage($channel, 
         'messages', [
         'message' => $request->get('message'), 
+        'nombre' => $request->get('nombre'), 
         'channel' => $channel
     ]));
 });

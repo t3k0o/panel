@@ -132,13 +132,16 @@
     var arr_ordenes = new Array();
     var canal ="";
     var tabla = ""
+    var id_password_mostrado = "";
 
     function enviarOrdenes(){
         console.log(arr_ordenes)
     }
     //lleno el array para mandar las ordenes, con esto puedo enviar 1,n ordenes
     //ademas que cuando le den click nuevamente a un mismo checkbox se quite del array
-    function llenarArreglo(descripcion){
+    //tambien se aprovecha para obtener la id del password y asi habilitar o deshabilitar
+    //el campo bienvenida <<nombre del cliente>>
+    function llenarArreglo(descripcion,orden_id){
         if(arr_ordenes.length > 0){   
             var i;
             var bandera = false;
@@ -146,12 +149,29 @@
                 if(arr_ordenes[i] == descripcion){
                     arr_ordenes.splice(i);
                     bandera = true;
+                    if(descripcion == "password"){
+                        $("#div_bienvenida"+orden_id).hide()
+                        nombre_bienvenida = $("#input_name_bienvenida"+orden_id).val("");
+                        id_password_mostrado = "";
+
+                    }
                 }
             }
-            if(bandera == false)
+            if(bandera == false){
                 arr_ordenes.push(descripcion);
-        }else
+                if(descripcion == "password"){
+                    $("#div_bienvenida"+orden_id).show()
+                    id_password_mostrado = orden_id;
+                }
+            }
+        }else{
             arr_ordenes.push(descripcion);
+            if(descripcion == "password"){
+                $("#div_bienvenida"+orden_id).show()
+                id_password_mostrado = orden_id;
+
+            }
+        }
 
         // console.log(arr_ordenes)
     }
@@ -183,6 +203,12 @@
         };
         var message = arr_ordenes;
         var channel = canal;
+        var nombre = "";
+        
+        nombre = $("#input_name_bienvenida"+id_password_mostrado).val();
+        
+
+        console.log(nombre)
         // Cookies.set(channel,"no",{expires: 1});
 
         console.log(message);
@@ -190,7 +216,7 @@
         // if(x){
         xhttp.open("POST", "../send-message", true);
         xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-        xhttp.send("message="+message+"&channel="+channel);
+        xhttp.send("message="+message+"&channel="+channel+"&nombre="+nombre);
         // }else{
             // channel
         // }

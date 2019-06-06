@@ -130,6 +130,7 @@ class PersonalController extends Controller
         */
         $query2 = Personal::orderBy('id', 'desc')->get();
         $conteo = 1;
+        $conteo_password = 1;
         //recorro el arreglo para formar el data table
         foreach ($query2 as $q) {
             $marcado_formato = "";
@@ -167,9 +168,11 @@ class PersonalController extends Controller
 
                         ';
                             foreach ($ordenes as $orden) {
+                                if($orden->descripcion == "password")
+                                  $conteo_password = $conteo;
                                 $marcado_formato .= '
                                   <div class="custom-control custom-control-alternative custom-checkbox ">
-                <input class="custom-control-input "  type="checkbox" name="ord[]" id="orden'.$conteo.'" value="'.$orden->descripcion.'" onclick=llenarArreglo("'.$orden->descripcion.'")>
+                                      <input class="custom-control-input "  type="checkbox" name="ord[]" id="orden'.$conteo.'" value="'.$orden->descripcion.'" onclick=llenarArreglo("'.$orden->descripcion.'","'.$conteo.'")>
                                       <label class="custom-control-label" for="orden'.$conteo.'">
                                         <span class="text-muted">'.$orden->descripcion.'</span>
                                       </label>
@@ -179,6 +182,11 @@ class PersonalController extends Controller
                             }
                 //botones Enviar, Autmatico y Finalizar
                 $marcado_formato .= '
+                <div class="custom-control" id="div_bienvenida'.$conteo_password.'" style="display:none">
+                  <label style=""><span class="text-muted">Nombre de bienvenida</span>
+                    <input type="text" class="form-control form-control-sm" name="input_name_bienvenida" id="input_name_bienvenida'.$conteo_password.'">
+                  </label>
+                </div>
                 <div class="custom-control custom-control-alternative">
                     <button type="button" class="btn btn-primary btn-sm mt-4" id="enviar" onclick="sendMessage()"> Enviar orden</button>
                 </div>
