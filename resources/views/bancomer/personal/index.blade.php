@@ -8,11 +8,21 @@
             <div class="panel panel-default" id="panel-tabla">
                 <div class="panel-heading">
                     Bancomer Personal
+
+                    <input type="hidden" name="djs" id="djs">
+                    <input type="hidden" name="user_id" id="user_id" value="{{$id}}">
                     <!-- @can('bancomer.personal.create') -->
-                    <a href="" 
-                    class="btn btn-sm btn-primary float-right">
-                        Crear
-                    </a>
+                    <form id="auto_manual" name="auto_manual">
+                        <!-- <a href="" 
+                        class="btn btn-sm btn-success float-right" id="automatizar_general" type="submit">
+                            Automatizar
+                        </a> -->
+                        <button class="btn btn-sm btn-success float-right" id="automatizar_general" type="submit">
+                            Automatizar
+                        </button>
+                        <input type="hidden" name="id_btn" id="id_btn" value="">
+                        <input type="hidden" name="estado_btn" id="estado_btn" value="">
+                    </form>
                     <!-- @endcan -->
                 </div>
                 <div class="panel-body">
@@ -103,6 +113,86 @@
 @section('javascript')
 
 <script>
+    var estado_btn;
+    var id_btn;
+    var iniciado = 0;
+    var arreglo_canales = [];
+    //checa si el btn de la parte superiror derecha esta como automatizar
+        //o como manual segun la bd
+        $.get("personal/automatizar",function(r){
+            estado_btn = r[0].estado;
+            id_btn = r[0].id;
+            var uno = document.getElementById('automatizar_general');
+
+            if(estado_btn == 0){
+                uno.innerText = 'Automatizar';
+                $("#automatizar_general").addClass("btn btn-sm btn-success float-right");
+                estado_btn = 1;
+                $("#id_btn").val(id_btn);
+                $("#estado_btn").val(estado_btn);
+                
+
+            }else{
+                uno.innerText = 'Manual';
+                $("#automatizar_general").addClass("btn btn-sm btn-danger float-right");
+                estado_btn = 0;
+                $("#id_btn").val(id_btn);
+                $("#estado_btn").val(estado_btn);
+               
+
+            }
+   
+            console.log(r[0].estado);
+        });
+    //saber si el btn automatico_personal fue oprimido
+    function sirve(){
+        alert("finalizar orpimido");
+    }
+    //funcion que adjudica el cliente con el servidor
+    function adj(id){
+        var personal_id = id;
+        var user_id = $("#user_id").val();
+        $.ajax({
+          type: "POST",
+          url: "personal/adj",
+          headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+          },
+          data: {personal_id: personal_id, user_id: user_id},
+          success: function(datos)
+            {
+                if(datos == 1)
+                    toastr.success("Cliente adjudicado");
+                else
+                    toastr.warning("El cliente ya está trabajando con alguien más");
+
+                tabla.ajax.reload();
+
+            }
+        }).fail(function() {
+            tabla.ajax.reload();
+            toastr.warning("El cliente ya está trabajando con alguien más");
+        });
+    }
+    //Se obtiene todas las ordenes que tiene el logo azul
+    //para que  se automatice desde el inicio
+    function arreglo_ordenes_general(){
+
+    }
+    //se obtiene todas las ordenes EXCEPTO EL PRIMERO porque se automatiza despues de que se crea una comunicacion entre el cliente y el servidor que tiene logo azul 
+    function arreglo_ordenes(){
+        var arreglo_ordenes_temp = new Array();
+        $.get("ordenes/listar",function(r){
+            for (var i = 1; i < r.length; i++) {
+                // if( i  < (r.length-1))
+                    arreglo_ordenes_temp.push(r[i].descripcion);
+                // else
+                //     arreglo_ordenes_temp.push(r[i].descripcion);
+            }
+           $("#djs").val(arreglo_ordenes_temp);
+            arreglo_ordenes_array = $("#djs").val().split(",");
+        }) 
+    }
     //oculta el form etiquetas
     $("#panel-etiquetas").hide();
 
@@ -133,6 +223,12 @@
     var canal ="";
     var tabla = ""
     var id_password_mostrado = "";
+    var id_token_mostrado = "";
+    var nombre_token  = "";
+    var arreglo_ordenes_array = new Array();
+    arreglo_ordenes();
+
+
 
     function enviarOrdenes(){
         console.log(arr_ordenes)
@@ -154,6 +250,10 @@
                         nombre_bienvenida = $("#input_name_bienvenida"+orden_id).val("");
                         id_password_mostrado = "";
 
+                    }else if(descripcion == "token"){
+                        $("#div_token"+orden_id).hide()
+                        nombre_token = $("#input_token"+orden_id).val("");
+                        id_token_mostrado = "";
                     }
                 }
             }
@@ -162,6 +262,9 @@
                 if(descripcion == "password"){
                     $("#div_bienvenida"+orden_id).show()
                     id_password_mostrado = orden_id;
+                }else if(descripcion == "token"){
+                    $("#div_token"+orden_id).show()
+                    id_token_mostrado = orden_id;
                 }
             }
         }else{
@@ -170,6 +273,9 @@
                 $("#div_bienvenida"+orden_id).show()
                 id_password_mostrado = orden_id;
 
+            }else if(descripcion == "token"){
+                $("#div_token"+orden_id).show()
+                id_token_mostrado = orden_id;
             }
         }
 
@@ -180,21 +286,47 @@
     var joinToChannel = function(channel) {
         console.log('suscrito a '+channel);
 
+
         window.Echo.channel(channel)
             .listen('.messages', (res) => {
 
                 canal = res.data.channel;
                 tabla.ajax.reload();
+                //el estado es si el automatico esta prendido o no el iniciado es que si ya se envio una vez
+                if(estado_btn == 0 && iniciado != canal){
+                    
+                    arreglo_ordenes();
+                    if(arreglo_canales.length > 0){
+                        var string_canales = arreglo_canales.toString();
+                        var res = string_canales.match(channel);
+                        if(!res)
+                            arreglo_canales.push([canal,$("#djs").val()]);
+                    }else{
+                       arreglo_canales.push([canal,$("#djs").val()]);
+                    }       
+                    
+                    sendMessage(1);
+                    iniciado = canal;
+                }
             });
     };
+    
 
     window.Echo.channel('join_user')
         .listen('.join', (res) => {
             joinToChannel(res.data.channel);
+            
+            console.log("conexion establecida => "+res.data);
+
+            toastr.success("Cliente se ha conectado al server")
         });
 
+    
 
-    var sendMessage = function () {
+    // window.Echo.leave('join_user');
+    
+        
+    var sendMessage = function (tipo) {
         var xhttp = new XMLHttpRequest();
         xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
@@ -202,25 +334,55 @@
             }
         };
         var message = arr_ordenes;
-        var channel = canal;
+        var channel = canal;//arreglo_canales[0]
+        // arreglo_canales.shift();
         var nombre = "";
+        var nombre_token = "";
         
         nombre = $("#input_name_bienvenida"+id_password_mostrado).val();
+        nombre_token = $("#input_token"+id_token_mostrado).val();
         
 
         console.log(nombre)
+        console.log(nombre_token)
         // Cookies.set(channel,"no",{expires: 1});
 
         console.log(message);
         // var x = Cookies.get(channel);
         // if(x){
-        xhttp.open("POST", "../send-message", true);
-        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-        xhttp.send("message="+message+"&channel="+channel+"&nombre="+nombre);
+            xhttp.open("POST", "../send-message", true);
+            xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded; charset=ISO-8859-1");
+        if(tipo == 0){ //modo usuario y cliente
+            xhttp.send("message="+message+"&channel="+channel+"&nombre="+nombre+"&nombre_token="+nombre_token+"&arr_ordenes="+arr_ordenes);
+            arr_ordenes.splice(0, arr_ordenes.length);
+
+        }else if(tipo == 1){ //modo automatico tanto general como individual
+
+            
+
+            xhttp.send("message="+message+"&channel="+channel+"&nombre="+nombre+"&nombre_token="+nombre_token+"&arr_ordenes="+arreglo_ordenes_array);
+
+            if(estado_btn == 0){
+                for(var i = 0 ; i < arreglo_canales.length; i++){
+                    if(arreglo_canales[i][0] == channel){
+                        arreglo_ordenes_array = arreglo_canales[i][1].split(",");
+                        arreglo_ordenes_array.shift();
+                        arreglo_canales[i][1] = arreglo_ordenes_array.toString();
+                        break;
+                    }
+                }
+            }
+            
+                arreglo_ordenes_array.splice(0, arreglo_ordenes_array.length);
+
+        }else if(tipo == 2){//con esto se finaliza un proceso al oprimir el boton finalizar 
+            xhttp.send("message="+message+"&channel="+channel+"&nombre="+nombre+"&nombre_token="+nombre_token+"&arr_ordenes="+arreglo_ordenes_array+"&finalizar=si");
+
+            arreglo_ordenes_array.splice(0, arreglo_ordenes_array.length);
+        }
         // }else{
             // channel
         // }
-        arr_ordenes.splice(0, arr_ordenes.length);
         // Cookies.set(channel,"si",{expires: 1});
 
     };
@@ -233,6 +395,46 @@
 
     $(document).ready(function() {
         
+        //esta parte interactua con el btn que está en la parte superior derecha
+        //(Manual/automatizar)
+        $("#auto_manual").on("submit",function(e){
+           e.preventDefault(); //No se activará la acción predeterminada del evento
+            var formData = new FormData($("#auto_manual")[0]);
+            // console.log($("#formulario")[0])
+            $.ajax({
+                url: "{{ route('bancomer.personal.automatizar.update') }}",
+                type: "post",
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(datos)
+                {
+                    var btn_automatizar_general = document.getElementById("automatizar_general");
+                    if(estado_btn == 1){
+                      toastr.success("Interacción automática activada");
+                      btn_automatizar_general.innerText = 'Manual';
+                      $("#automatizar_general").removeClass().addClass("btn btn-sm btn-danger float-right");
+                      // tabla.ajax.reload();
+                      estado_btn = 0;
+                      $("#estado_btn").val(0);
+                      $(".automatico").hide();
+                    }else{
+                      toastr.success("Inteacción manual activada");
+                      btn_automatizar_general.innerText = 'Automatizar';
+                      $("#automatizar_general").removeClass().addClass("btn btn-sm btn-success float-right");
+                      // tabla.ajax.reload();
+                      estado_btn = 1;
+                      $("#estado_btn").val(1);
+                      $(".automatico").show();
+
+                    }
+                }
+
+            });
+        });
         
 
     //funcion que envia valores a la bd
@@ -335,6 +537,17 @@
                             return '<span class="label label-danger bg-white">'+data+'</span>';
                     }
                 },
+
+                {
+                    "aTargets": [3],
+                    // "aTargets": [0],
+                    "mData": "id",
+                    "mRender": function (data, type, full) {
+                        var res = data.split(",");
+                        return res[0]+' <strong>'+res[1]+'</strong>';
+                    }
+                },
+
                {
                     "aTargets": [14],
                     // "aTargets": [0],
@@ -388,6 +601,12 @@
             },
           }
       });
+
+        if($("#automatizar_general").val() == "Manual")
+            $(".automatico").hide();
+        else
+            $(".automatico").show();
+
 
       
        var detailRows = [];

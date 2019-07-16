@@ -9,8 +9,8 @@
                 <div class="panel-heading">
                     <p class="text-center">Usuarios</p>  
                 </div>
-                <div class="panel-body">
-                    <table class="table table-striped table-hover table-sm">
+                <div class="panel-body table-responsive">
+                    <table class="table table-striped table-hover table-sm ">
                         <thead>
                             <tr>
                                 <th width="10px">ID</th>

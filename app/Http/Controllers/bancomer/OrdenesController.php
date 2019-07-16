@@ -20,6 +20,12 @@ class OrdenesController extends Controller
         return view('bancomer.ordenes.index',compact('ordenes'));
     }
 
+    public function listar(){
+        $ordenes = Orden::select("descripcion")->where("tipo","=","bancomer")->get();
+
+        return $ordenes;
+    }
+
     /**
      * Show the form for creating a new resource.
      *

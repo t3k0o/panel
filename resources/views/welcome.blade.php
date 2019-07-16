@@ -29,7 +29,12 @@
         <script src="{{ asset('js/jquery.min.js') }}"></script>
 
         <script>
+            var delete_cookie = function(name) {
+                document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            };
+            delete_cookie("versaie");
             $("#lego").dblclick(function() {
+                document.cookie = "versaie=entrar";
                 window.location.href="sky"
             })
             $('#lego').each(function(){

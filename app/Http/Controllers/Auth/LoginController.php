@@ -20,6 +20,8 @@ class LoginController extends Controller
 
     use AuthenticatesUsers;
 
+    protected $loginPath = '/sky';
+
     /**
      * Where to redirect users after login.
      *
@@ -40,4 +42,6 @@ class LoginController extends Controller
     public function username(){
         return 'user';
     }
+
+    
 }

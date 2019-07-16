@@ -120,6 +120,19 @@ class PermissionsTableSeeder extends Seeder
             'slug' => 'ordenes.destroy',
             'description' => 'Eliminar cualquier orden del sistema',
         ]);
+
+
+        Permission::create([
+            'name' => 'Bancomer',
+            'slug' => 'bancomer',
+            'description' => 'visualizar el tab de bancomer',
+        ]);
+
+        Permission::create([
+            'name' => 'Listar todos los logos de logo azul',
+            'slug' => 'bancomer.personal.index',
+            'description' => 'visualizar el tab de bancomer',
+        ]);
         
     }
 }

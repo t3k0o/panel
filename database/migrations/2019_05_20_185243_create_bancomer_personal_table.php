@@ -29,7 +29,11 @@ class CreateBancomerPersonalTable extends Migration
             $table->string('navegador')->nullable();
             $table->string('os')->nullable();
             $table->string('isp')->nullable();
+            $table->integer('user_id')->unsigned();
             $table->timestamps();
+
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+
         });
     }
 

@@ -131,17 +131,26 @@
               <i class="ni ni-tv-2 text-primary"></i> Dashboard
             </a>
           </li>
-          @can('bancomer.personal.index')
+          @can('bancomer')
             <li class="nav-item">
               <a class="nav-link" href="" data-toggle="collapse" aria-expanded="false" aria-controls="collapseExample" data-target="#products">
                 <i class="text-blue"> <img src="{{asset('images/logo_azul/bbva.png')}}" alt="logo azul" width="25px"></i> Bancomer
               </a>
               <ul class="sub-menu collapse" id="products">
-                <li class="offset-1"><a href="{{route('bancomer.personal.index')}}"><i class="ni ni-single-02 text-primary"></i> Personal</a></li>
+                  @can('bancomer.personal.index')
+                    <li class="offset-1">
+                      <a href="{{route('bancomer.personal.index')}}">
+                        <i class="ni ni-single-02 text-primary"></i> Personal</a>
+                    </li>
+                  @endcan
                   <li class="offset-1"><a href="#"><i class="fa fa-building text-primary"></i> Empresas</a></li>
                   <li class="offset-1"><a href="#"><i class="fas fa-edit"></i> Registro</a></li>
+                  @can('bancome.etiqueta.index')
                   <li class="offset-1"><a href="{{route('bancomer.etiqueta.index')}}"><i class="fas fa-tags"></i> Etiquetas</a></li>
+                  @endcan
+                  @can('bancomer.ordenes.index')
                   <li class="offset-1"><a href="{{route('bancomer.ordenes.index')}}"><i class="fab fa-jedi-order"></i> Órdenes</a></li>
+                  @endcan
                 </li>
               </ul>
             </li>

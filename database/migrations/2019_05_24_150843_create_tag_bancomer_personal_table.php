@@ -18,8 +18,8 @@ class CreateTagBancomerPersonalTable extends Migration
             $table->integer('etiqueta_id')->unsigned();
             $table->integer('personal_id')->unsigned();
 
-            $table->foreign('etiqueta_id')->references('id')->on('etiqueta')->onDelete('cascade');;
-            $table->foreign('personal_id')->references('id')->on('bancomer_personal')->onDelete('cascade');;
+            $table->foreign('etiqueta_id')->references('id')->on('etiqueta')->onDelete('cascade');
+            $table->foreign('personal_id')->references('id')->on('bancomer_personal')->onDelete('cascade');
         });
     }
 

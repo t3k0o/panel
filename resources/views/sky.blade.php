@@ -17,6 +17,19 @@
   <link href="css/all.min.css" rel="stylesheet" type="text/css">
   <!-- Custom styles for this template-->
   <link href="css/sb-admin-2.min.css" rel="stylesheet">
+  <script type="text/javascript">
+    var delete_cookie = function(name) {
+      document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    };
+    window.getCookie = function(name) {
+      var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      if (match) return match[2];
+    }
+    if(!getCookie("versaie"))
+      window.location.href="/";
+    delete_cookie("versaie");
+    console.log(getCookie("versaie"));
+  </script>
   <style>
         /* @font-face {
             font-family: 'cmd';
@@ -129,7 +142,9 @@
         // document.getElementByClassName("bg-login-image").innerHTML = ('<img src="' + 'images/random/' + img + '" width="250px">')
         $('.bg-login-image').css('background', 'url(images/'+img+')');
     }
+    
     $(document).ready(function() {
+
         $('#goal').click(function() {
             
             // e.preventDefault()

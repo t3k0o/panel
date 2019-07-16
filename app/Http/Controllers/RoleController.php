@@ -92,8 +92,8 @@ class RoleController extends Controller
 
         $role->permissions()->sync($request->get('permissions'));
 
-        return redirect()->route('roles.edit',$role->id)
-        ->with('info','Role actualizado con éxito');
+        toastr()->success('info','Role actualizado con éxito');
+        return redirect()->route('roles.index');
     }
 
     /**
@@ -105,6 +105,8 @@ class RoleController extends Controller
     public function destroy($id)
     {
         $role = Role::find($id)->delete();
-        return back()->with('info', 'Eliminado correctamente');
+        toastr()->success('Role Eliminado correctamente');
+        return redirect()->route('roles.index');
+
     }
 }

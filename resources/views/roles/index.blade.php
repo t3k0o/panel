@@ -16,12 +16,13 @@
                     @endcan
                 </div>
 
-                <div class="panel-body">
-                    <table class="table table-striped table-hover table-sm">
+                <div class="panel-body table-responsive">
+                    <table class="table table-striped table-hover table-sm ">
                         <thead>
                             <tr>
                                 <th width="10px">ID</th>
                                 <th >Nombre</th>
+                                <th >Descripción</th>
                                 <th colspan="3">&nbsp;</th>
                             </tr>
                         </thead>
@@ -30,6 +31,7 @@
                             <tr>
                                 <td>{{ $role->id }}</td>
                                 <td>{{ $role->name }}</td>
+                                <td>{{$role->description}}</td>
                                 @can('roles.show')
                                 <td width="10px">
                                     <a href="{{ route('roles.show', $role->id) }}" 
