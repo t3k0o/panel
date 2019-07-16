@@ -7,7 +7,11 @@
           <div class="card shadow">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <p class="text-center">Usuarios</p>  
+                    Usuarios 
+                    <a href="" 
+                    class="btn btn-sm btn-primary float-right">
+                        Crear
+                    </a> 
                 </div>
                 <div class="panel-body table-responsive">
                     <table class="table table-striped table-hover table-sm ">
